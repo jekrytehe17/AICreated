@@ -17,15 +17,28 @@ import Auth from './Auth';
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [visitorCount, setVisitorCount] = useState(12842);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
+      if (currentUser) {
+        setShowAuthModal(false);
+      }
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (showAuthModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showAuthModal]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,6 +46,15 @@ export default function App() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleAction = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    // Action for authenticated users
+    console.log("Action performed");
+  };
 
   const handleLogout = async () => {
     try {
@@ -50,12 +72,32 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    return <Auth />;
-  }
-
   return (
     <div className="min-h-screen text-white font-sans selection:bg-cyan-500/30">
+      {/* Auth Modal Overlay */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 bg-[#020617]/90 backdrop-blur-sm"
+            onClick={() => setShowAuthModal(false)}
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative w-full max-w-md bg-[#020617] border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+          >
+            <button 
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors z-10"
+            >
+              <LogOut size={20} className="rotate-180" />
+            </button>
+            <Auth />
+          </motion.div>
+        </div>
+      )}
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#020617]/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -79,20 +121,32 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex flex-col items-end mr-2">
-              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Welcome</span>
-              <span className="text-xs text-slate-300 font-medium">
-                {user.displayName && user.displayName.trim() !== '' ? user.displayName : (user.email || 'Member')}
-              </span>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="bg-slate-800 hover:bg-red-500/10 hover:text-red-400 text-slate-300 border border-white/5 px-4 py-2 rounded-full text-sm font-bold transition-all active:scale-95 flex items-center gap-2 group" 
-              id="logout-button"
-            >
-              <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
-              Log out
-            </button>
+            {user ? (
+              <>
+                <div className="hidden sm:flex flex-col items-end mr-2">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Welcome</span>
+                  <span className="text-xs text-slate-300 font-medium">
+                    {user.displayName && user.displayName.trim() !== '' ? user.displayName : (user.email || 'Member')}
+                  </span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="bg-slate-800 hover:bg-red-500/10 hover:text-red-400 text-slate-300 border border-white/5 px-4 py-2 rounded-full text-sm font-bold transition-all active:scale-95 flex items-center gap-2 group" 
+                  id="logout-button"
+                >
+                  <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+                  Log out
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={() => setShowAuthModal(true)}
+                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-6 py-2 rounded-full text-sm font-bold transition-all active:scale-95 shadow-lg shadow-cyan-500/20"
+                id="login-button"
+              >
+                Sign in
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -105,6 +159,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="group cursor-pointer mb-12"
+            onClick={handleAction}
           >
             <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/20 px-5 py-2 rounded-full text-cyan-400 text-sm font-semibold hover:bg-cyan-500/20 transition-all hover:scale-105 shadow-xl shadow-cyan-950/20">
               <span className="animate-bounce">🎁</span>
@@ -131,6 +186,7 @@ export default function App() {
               description="I can help you to plan your Proof of Concept for your project"
               color="bg-cyan-500/20 text-cyan-400"
               delay={0.2}
+              onClick={handleAction}
             />
             <Card 
               icon={<Presentation />}
@@ -138,6 +194,7 @@ export default function App() {
               description="Let me prepare your presentation slide with modern style"
               color="bg-violet-500/20 text-violet-400"
               delay={0.3}
+              onClick={handleAction}
             />
             <Card 
               icon={<Workflow />}
@@ -145,6 +202,7 @@ export default function App() {
               description="Makes your presentation look professional with diagram design"
               color="bg-emerald-500/20 text-emerald-400"
               delay={0.4}
+              onClick={handleAction}
             />
           </div>
         </div>
@@ -159,7 +217,7 @@ export default function App() {
             </div>
             <a 
               href="https://www.linkedin.com/in/jekry-tehe-564126147/" 
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-slate-900 px-5 py-2.5 rounded-full border border-white/5 hover:border-blue-500/50 hover:bg-slate-800 transition-all active:scale-95"
             >
@@ -186,13 +244,15 @@ function Card({
   title, 
   description, 
   color, 
-  delay = 0, 
+  delay = 0,
+  onClick,
 }: { 
   icon: ReactNode, 
   title: string, 
   description: string, 
   color: string,
   delay?: number,
+  onClick?: () => void,
 }) {
   return (
     <motion.div
@@ -201,6 +261,7 @@ function Card({
       transition={{ delay, duration: 0.6, ease: "easeOut" }}
       className="group relative"
       id={`card-${title.toLowerCase().replace(/\s+/g, '-')}`}
+      onClick={onClick}
     >
       <div className={`
         relative overflow-hidden h-full
