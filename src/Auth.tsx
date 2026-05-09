@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword 
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import { motion } from 'motion/react';
-import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Loader2, AlertCircle, Github } from 'lucide-react';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,6 +16,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +47,48 @@ export default function Auth() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSocialSignIn = async (providerName: 'google' | 'github') => {
+    setError('');
+    setSocialLoading(providerName);
+    
+    // Safety timeout to reset loading state if popup detection hangs
+    const safetyTimer = setTimeout(() => {
+      setSocialLoading(current => current === providerName ? null : current);
+    }, 5000);
+
+    const provider = providerName === 'google' 
+      ? new GoogleAuthProvider() 
+      : new GithubAuthProvider();
+
+    if (providerName === 'github') {
+      (provider as GithubAuthProvider).addScope('read:user');
+    }
+
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err: any) {
+      const code = err.code || '';
+      console.error(`${providerName} sign in error:`, code);
+      if (code === 'auth/popup-blocked') {
+        setError('Popup was blocked by your browser. Please allow popups.');
+      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // Silently handle manual cancellation or interrupted requests
+        setError('');
+      } else if (code === 'auth/unauthorized-domain') {
+        setError('Domain not authorized. Please add this URL to your Firebase Console Authorized Domains.');
+      } else if (code === 'auth/invalid-credential') {
+        setError('GitHub configuration error: Please check your Client ID and Client Secret.');
+      } else if (code === 'auth/account-exists-with-different-credential') {
+        setError('An account already exists with this email. Please sign in using your original method.');
+      } else {
+        setError(err.message || `Failed to sign in with ${providerName}`);
+      }
+    } finally {
+      clearTimeout(safetyTimer);
+      setSocialLoading(null);
     }
   };
 
@@ -117,7 +163,7 @@ export default function Auth() {
 
             <button 
               type="submit"
-              disabled={loading}
+              disabled={loading || !!socialLoading}
               className="w-full bg-white text-slate-950 font-bold py-3 rounded-2xl hover:bg-slate-100 transition-colors active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-white/5 mt-2"
             >
               {loading ? (
@@ -127,6 +173,43 @@ export default function Auth() {
               )}
             </button>
           </form>
+
+          <div className="mt-6 flex items-center gap-4">
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Or continue with</span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <button
+              onClick={() => handleSocialSignIn('google')}
+              disabled={loading || !!socialLoading}
+              className="flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-800 border border-white/5 py-3 rounded-2xl text-sm font-semibold transition-all hover:border-cyan-500/30 disabled:opacity-50"
+            >
+              {socialLoading === 'google' ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <>
+                  <span className="text-lg font-bold text-cyan-400">G</span>
+                  Google
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => handleSocialSignIn('github')}
+              disabled={loading || !!socialLoading}
+              className="flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-800 border border-white/5 py-3 rounded-2xl text-sm font-semibold transition-all hover:border-cyan-500/30 disabled:opacity-50"
+            >
+              {socialLoading === 'github' ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <>
+                  <Github size={18} />
+                  GitHub
+                </>
+              )}
+            </button>
+          </div>
 
           <div className="mt-8 text-center">
             <button 
