@@ -119,7 +119,7 @@ export default function App() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl md:text-7xl font-extrabold tracking-tight mb-16 text-slate-50"
           >
-            Thank you for coming.<br />
+            Thank you for coming<br />
             <span className="text-slate-500">What can I help you?</span>
           </motion.h1>
 
