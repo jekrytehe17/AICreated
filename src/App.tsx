@@ -80,8 +80,10 @@ export default function App() {
 
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex flex-col items-end mr-2">
-              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Authenticated as</span>
-              <span className="text-xs text-slate-300 font-medium">{user.email}</span>
+              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Welcome</span>
+              <span className="text-xs text-slate-300 font-medium">
+                {user.displayName && user.displayName.trim() !== '' ? user.displayName : (user.email || 'Member')}
+              </span>
             </div>
             <button 
               onClick={handleLogout}
