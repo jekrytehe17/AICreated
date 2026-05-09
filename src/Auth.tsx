@@ -222,6 +222,9 @@ export default function Auth() {
                 <span>Already have an account? <span className="font-bold underline decoration-cyan-400/30">Sign in</span></span>
               )}
             </button>
+            <div className="text-slate-600 text-xs font-medium tracking-widest uppercase py-1">
+            © 2026 AICreated by Jekry Tehe
+          </div>
           </div>
         </div>
       </motion.div>
