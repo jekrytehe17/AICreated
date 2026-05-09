@@ -13,11 +13,16 @@ import { motion } from 'motion/react';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth } from './lib/firebase';
 import Auth from './Auth';
+import PocGenerator from './components/PocGenerator';
+
+type AppView = 'home' | 'poc';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [currentView, setCurrentView] = useState<AppView>('home');
+  const [pendingView, setPendingView] = useState<AppView | null>(null);
   const [visitorCount, setVisitorCount] = useState(12842);
 
   useEffect(() => {
@@ -26,6 +31,10 @@ export default function App() {
       setAuthLoading(false);
       if (currentUser) {
         setShowAuthModal(false);
+        if (pendingView) {
+          setCurrentView(pendingView);
+          setPendingView(null);
+        }
       }
     });
     return () => unsubscribe();
@@ -47,18 +56,19 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAction = () => {
+  const handleAction = (view: AppView) => {
     if (!user) {
+      setPendingView(view);
       setShowAuthModal(true);
       return;
     }
-    // Action for authenticated users
-    console.log("Action performed");
+    setCurrentView(view);
   };
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      setCurrentView('home');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -81,7 +91,10 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute inset-0 bg-[#020617]/90 backdrop-blur-sm"
-            onClick={() => setShowAuthModal(false)}
+            onClick={() => {
+              setShowAuthModal(false);
+              setPendingView(null);
+            }}
           />
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -89,7 +102,10 @@ export default function App() {
             className="relative w-full max-w-md bg-[#020617] border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
           >
             <button 
-              onClick={() => setShowAuthModal(false)}
+              onClick={() => {
+                setShowAuthModal(false);
+                setPendingView(null);
+              }}
               className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors z-10"
             >
               <LogOut size={20} className="rotate-180" />
@@ -102,7 +118,10 @@ export default function App() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#020617]/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <div className="text-2xl font-bold tracking-tight">
+            <div 
+              className="text-2xl font-bold tracking-tight cursor-pointer"
+              onClick={() => setCurrentView('home')}
+            >
               <span className="text-cyan-400">AI</span>Created
             </div>
             
@@ -151,90 +170,96 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <main className="pt-32 pb-20 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="group cursor-pointer mb-12"
-            onClick={handleAction}
-          >
-            <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/20 px-5 py-2 rounded-full text-cyan-400 text-sm font-semibold hover:bg-cyan-500/20 transition-all hover:scale-105 shadow-xl shadow-cyan-950/20">
-              <span className="animate-bounce">🎁</span>
-              AICreated is giving you 30% off for Pro 1 Year
-              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </motion.div>
+      {currentView === 'poc' ? (
+        <PocGenerator onBack={() => setCurrentView('home')} />
+      ) : (
+        <>
+          {/* Hero Section */}
+          <main className="pt-32 pb-20 px-4">
+            <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="group cursor-pointer mb-12"
+                onClick={() => handleAction('poc')}
+              >
+                <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/20 px-5 py-2 rounded-full text-cyan-400 text-sm font-semibold hover:bg-cyan-500/20 transition-all hover:scale-105 shadow-xl shadow-cyan-950/20">
+                  <span className="animate-bounce">🎁</span>
+                  AICreated is giving you 30% off for Pro 1 Year
+                  <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </motion.div>
 
-          <motion.h1 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-7xl font-extrabold tracking-tight mb-16 text-slate-50"
-          >
-            Thank you for coming<br />
-            <span className="text-slate-500">What can I help you?</span>
-          </motion.h1>
+              <motion.h1 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-4xl md:text-7xl font-extrabold tracking-tight mb-16 text-slate-50"
+              >
+                Thank you for coming<br />
+                <span className="text-slate-500">What can I help you?</span>
+              </motion.h1>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl mx-auto">
-            <Card 
-              icon={<FlaskConical />}
-              title="Create PoC"
-              description="I can help you to plan your Proof of Concept for your project"
-              color="bg-cyan-500/20 text-cyan-400"
-              delay={0.2}
-              onClick={handleAction}
-            />
-            <Card 
-              icon={<Presentation />}
-              title="Create Slide Presentation"
-              description="Let me prepare your presentation slide with modern style"
-              color="bg-violet-500/20 text-violet-400"
-              delay={0.3}
-              onClick={handleAction}
-            />
-            <Card 
-              icon={<Workflow />}
-              title="Create Diagram Workflow"
-              description="Makes your presentation look professional with diagram design"
-              color="bg-emerald-500/20 text-emerald-400"
-              delay={0.4}
-              onClick={handleAction}
-            />
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="py-20 px-4">
-        <div className="max-w-7xl mx-auto pt-12 border-t border-white/5 flex flex-col items-center gap-6">
-          <div className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-slate-800 group-hover:border-blue-500 transition-colors">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Jekry" alt="Jekry Tehe" className="w-full h-full object-cover" />
-            </div>
-            <a 
-              href="https://www.linkedin.com/in/jekry-tehe-564126147/" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-slate-900 px-5 py-2.5 rounded-full border border-white/5 hover:border-blue-500/50 hover:bg-slate-800 transition-all active:scale-95"
-            >
-              <div className="text-blue-500">
-                <Linkedin size={20} fill="currentColor" className="stroke-none" />
+              {/* Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl mx-auto">
+                <Card 
+                  icon={<FlaskConical />}
+                  title="Create PoC"
+                  description="I can help you to plan your Proof of Concept for your project"
+                  color="bg-cyan-500/20 text-cyan-400"
+                  delay={0.2}
+                  onClick={() => handleAction('poc')}
+                />
+                <Card 
+                  icon={<Presentation />}
+                  title="Create Slide Presentation"
+                  description="Let me prepare your presentation slide with modern style"
+                  color="bg-violet-500/20 text-violet-400"
+                  delay={0.3}
+                  onClick={() => handleAction('home')}
+                />
+                <Card 
+                  icon={<Workflow />}
+                  title="Create Diagram Workflow"
+                  description="Makes your presentation look professional with diagram design"
+                  color="bg-emerald-500/20 text-emerald-400"
+                  delay={0.4}
+                  onClick={() => handleAction('home')}
+                />
               </div>
-              <span className="text-sm font-bold">Jekry Tehe</span>
-              <span className="w-px h-3 bg-white/10" />
-              <span className="text-xs text-slate-500 font-medium tracking-wide">Connect on LinkedIn</span>
-            </a>
-          </div>
-          
-          <div className="text-slate-600 text-xs font-medium tracking-widest uppercase py-1">
-            © 2026 AICreated. All rights reserved.
-          </div>
-        </div>
-      </footer>
+            </div>
+          </main>
+
+          {/* Footer */}
+          <footer className="py-20 px-4">
+            <div className="max-w-7xl mx-auto pt-12 border-t border-white/5 flex flex-col items-center gap-6">
+              <div className="flex items-center gap-3 group">
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-slate-800 group-hover:border-blue-500 transition-colors">
+                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Jekry" alt="Jekry Tehe" className="w-full h-full object-cover" />
+                </div>
+                <a 
+                  href="https://www.linkedin.com/in/jekry-tehe-564126147/" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-slate-900 px-5 py-2.5 rounded-full border border-white/5 hover:border-blue-500/50 hover:bg-slate-800 transition-all active:scale-95"
+                >
+                  <div className="text-blue-500">
+                    <Linkedin size={20} fill="currentColor" className="stroke-none" />
+                  </div>
+                  <span className="text-sm font-bold">Jekry Tehe</span>
+                  <span className="w-px h-3 bg-white/10" />
+                  <span className="text-xs text-slate-500 font-medium tracking-wide">Connect on LinkedIn</span>
+                </a>
+              </div>
+              
+              <div className="text-slate-600 text-xs font-medium tracking-widest uppercase py-1">
+                © 2026 AICreated. All rights reserved.
+              </div>
+            </div>
+          </footer>
+        </>
+      )}
     </div>
   );
 }
@@ -247,7 +272,7 @@ function Card({
   delay = 0,
   onClick,
 }: { 
-  icon: ReactNode, 
+  icon: React.ReactElement<{ size?: number }>, 
   title: string, 
   description: string, 
   color: string,
@@ -270,7 +295,7 @@ function Card({
         cursor-pointer hover:-translate-y-2 flex flex-col items-center text-center
       `}>
         <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] ${color}`}>
-          {React.cloneElement(icon as React.ReactElement, { size: 32 })}
+          {React.cloneElement(icon, { size: 32 })}
         </div>
         
         <h3 className="text-xl font-bold mb-4 group-hover:text-white transition-colors text-slate-100">
