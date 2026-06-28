@@ -221,7 +221,7 @@ export default function App() {
                 />
                 <Card 
                   icon={<Workflow />}
-                  title="Create Diagram Workflow"
+                  title="Comming Soon"
                   description="Makes your presentation look professional with diagram design"
                   color="bg-emerald-500/20 text-emerald-400"
                   delay={0.4}
