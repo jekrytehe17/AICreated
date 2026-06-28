@@ -213,7 +213,7 @@ export default function App() {
                 />
                 <Card 
                   icon={<Presentation />}
-                  title="Management Proyek"
+                  title="Management Project"
                   description="Let me prepare your presentation slide with modern style"
                   color="bg-violet-500/20 text-violet-400"
                   delay={0.3}
@@ -221,7 +221,7 @@ export default function App() {
                 />
                 <Card 
                   icon={<Workflow />}
-                  title="Comming Soon"
+                  title="Comming Soon!"
                   description="Makes your presentation look professional with diagram design"
                   color="bg-emerald-500/20 text-emerald-400"
                   delay={0.4}
